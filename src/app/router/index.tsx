@@ -14,11 +14,13 @@ import { ReportsPage } from '../../features/reports/ReportsPage';
 import { NotificationsPage } from '../../features/notifications/NotificationsPage';
 import { PwaOfflinePage } from '../../features/pwa/PwaOfflinePage';
 import { SettingsPage } from '../../features/settings/SettingsPage';
+import { RouteErrorBoundary } from '../../components/common/RouteErrorBoundary';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         index: true,

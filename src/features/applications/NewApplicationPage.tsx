@@ -84,7 +84,7 @@ export const NewApplicationPage: React.FC = () => {
   ]);
 
   // Default values or loaded from local draft
-  const defaultValues: Partial<ApplicationFormData> = {
+  const defaultValues: ApplicationFormData = {
     fullName: '',
     dob: '1992-04-15',
     gender: 'Male',
@@ -109,6 +109,18 @@ export const NewApplicationPage: React.FC = () => {
     estimatedMonthlyExpenses: 35000,
   };
 
+  const initialValues = React.useMemo<ApplicationFormData>(() => {
+    const draft = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (draft) {
+      try {
+        return { ...defaultValues, ...JSON.parse(draft) };
+      } catch {
+        return defaultValues;
+      }
+    }
+    return defaultValues;
+  }, [currentUser.branch]);
+
   const {
     register,
     handleSubmit,
@@ -118,17 +130,7 @@ export const NewApplicationPage: React.FC = () => {
     formState: { errors },
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
-    defaultValues: () => {
-      const draft = localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (draft) {
-        try {
-          return { ...defaultValues, ...JSON.parse(draft) };
-        } catch {
-          return defaultValues;
-        }
-      }
-      return defaultValues;
-    },
+    defaultValues: initialValues,
     mode: 'onBlur',
   });
 
