@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { storage } from '../../lib/storage';
 
+export type PlatformType = 'ios' | 'android' | 'desktop' | 'other';
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -8,8 +10,15 @@ interface BeforeInstallPromptEvent extends Event {
 
 interface PwaContextType {
   isInstallable: boolean;
+  canPromptNativeInstall: boolean;
   isInstalled: boolean;
+  platform: PlatformType;
+  isIos: boolean;
+  isAndroid: boolean;
   installApp: () => Promise<void>;
+  isInstallGuideOpen: boolean;
+  openInstallGuide: () => void;
+  closeInstallGuide: () => void;
   isOnline: boolean;
   notificationPermission: NotificationPermission;
   isPushSubscribed: boolean;
@@ -40,12 +49,36 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+const checkIsInstalled = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.matchMedia('(display-mode: minimal-ui)').matches ||
+    (window.navigator as any).standalone === true ||
+    document.referrer.includes('android-app://')
+  );
+};
+
+const detectPlatform = (): PlatformType => {
+  if (typeof window === 'undefined') return 'desktop';
+  const ua = window.navigator.userAgent.toLowerCase();
+  const isIosDevice =
+    /iphone|ipad|ipod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (isIosDevice) return 'ios';
+  if (/android/.test(ua)) return 'android';
+  return 'desktop';
+};
+
 const PwaContext = createContext<PwaContextType | undefined>(undefined);
 
 export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState<boolean>(() => checkIsInstalled());
+  const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
+  const [platform] = useState<PlatformType>(() => detectPlatform());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [needRefresh, setNeedRefresh] = useState(false);
@@ -55,6 +88,12 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [pushSubscription, setPushSubscription] = useState<PushSubscription | null>(null);
   const [toastMessage, setToastMessage] = useState<{ id: string; title: string; message: string; type: 'info' | 'success' | 'warning' | 'alert' } | null>(null);
+
+  const isIos = platform === 'ios';
+  const isAndroid = platform === 'android';
+  const canPromptNativeInstall = Boolean(deferredPrompt);
+  // Installable if not installed and (we have native prompt, or device is iOS/Android/Desktop which can be installed)
+  const isInstallable = !isInstalled;
 
   const showToast = (title: string, message: string, type: 'info' | 'success' | 'warning' | 'alert' = 'info') => {
     const id = Date.now().toString();
@@ -66,7 +105,7 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearToast = () => setToastMessage(null);
 
-  // Online / Offline Listeners
+  // Online / Offline & Standalone Mode Listeners
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -80,14 +119,23 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Check standalone display mode for installed PWA
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true) {
-      setIsInstalled(true);
+    // Watch for standalone display mode changes
+    const mql = window.matchMedia('(display-mode: standalone)');
+    const handleMql = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        setIsInstalled(true);
+      }
+    };
+    if (mql.addEventListener) {
+      mql.addEventListener('change', handleMql);
     }
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      if (mql.removeEventListener) {
+        mql.removeEventListener('change', handleMql);
+      }
     };
   }, []);
 
@@ -96,14 +144,13 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
     window.addEventListener('appinstalled', () => {
       setIsInstalled(true);
-      setIsInstallable(false);
       setDeferredPrompt(null);
+      setIsInstallGuideOpen(false);
       showToast('PWA Installed', 'Unity LOS is now installed on your device!', 'success');
     });
 
@@ -129,15 +176,36 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
+  const openInstallGuide = () => setIsInstallGuideOpen(true);
+  const closeInstallGuide = () => setIsInstallGuideOpen(false);
+
   const installApp = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsInstalled(true);
-      setIsInstallable(false);
+    if (isInstalled) {
+      showToast('Already Installed', 'Unity LOS is already running in installed mode.', 'info');
+      return;
     }
-    setDeferredPrompt(null);
+
+    // If native prompt is primed (e.g. Android Chrome or Chromium desktop)
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setIsInstalled(true);
+          setDeferredPrompt(null);
+          setIsInstallGuideOpen(false);
+        } else {
+          showToast('Install Cancelled', 'You can install Unity LOS anytime from the menu.', 'info');
+        }
+      } catch (err) {
+        console.warn('Native prompt error, falling back to guide:', err);
+        setIsInstallGuideOpen(true);
+      }
+    } else {
+      // On iOS Safari, or Android Chrome when prompt hasn't fired yet, or Desktop,
+      // show the interactive installation guide with exact device instructions!
+      setIsInstallGuideOpen(true);
+    }
   };
 
   const updateApp = () => {
@@ -232,7 +300,6 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     customTitle = 'Loan Sanction Alert: ULOS-2026-0002',
     customBody = 'Business Loan for ₹ 40,00,000 has been sanctioned by Western Regional Office.'
   ): Promise<boolean> => {
-    // 1. Try real server-side Web Push dispatch via /api/push-send
     let sentViaServer = false;
     if (pushSubscription) {
       try {
@@ -261,7 +328,6 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    // 2. If server push didn't execute or backend was unreachable, dispatch directly through Service Worker showNotification
     if (!sentViaServer) {
       if ('serviceWorker' in navigator && Notification.permission === 'granted') {
         const reg = await navigator.serviceWorker.ready;
@@ -277,12 +343,10 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } as any);
         showToast('Notification Dispatched', 'Dispatched through active Service Worker registration.', 'info');
       } else {
-        // In-app fallback toast
         showToast(customTitle, customBody, 'info');
       }
     }
 
-    // Log to notification feed
     storage.addNotification({
       id: `NOTIF-${Date.now().toString().slice(-6)}`,
       title: customTitle,
@@ -299,8 +363,15 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const value: PwaContextType = {
     isInstallable,
+    canPromptNativeInstall,
     isInstalled,
+    platform,
+    isIos,
+    isAndroid,
     installApp,
+    isInstallGuideOpen,
+    openInstallGuide,
+    closeInstallGuide,
     isOnline,
     notificationPermission,
     isPushSubscribed,

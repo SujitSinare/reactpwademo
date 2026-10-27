@@ -17,6 +17,8 @@ export default defineConfig({
         name: 'Unity Small Finance Bank - LOS',
         short_name: 'Unity LOS',
         description: 'Loan Origination & Credit Operations Platform - Sample Demo',
+        id: '/',
+        categories: ['finance', 'business'],
         theme_color: '#0B192C',
         background_color: '#F8FAFC',
         display: 'standalone',

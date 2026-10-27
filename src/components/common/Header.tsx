@@ -220,16 +220,18 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             <span>{isOnline ? 'Online' : 'Offline Mode'}</span>
           </div>
 
-          {/* PWA Install Button */}
-          {isInstallable && (
+          {/* PWA Install Button (Visible on mobile and desktop whenever not already installed) */}
+          {!isInstalled && (
             <Button
               variant="outline"
               size="sm"
               onClick={installApp}
-              className="bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-700 text-xs hidden sm:flex"
+              title="Install Unity LOS app to your device"
+              className="bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-300 dark:border-teal-700 text-xs px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Install App</span>
+              <Download className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span className="font-semibold">Install</span>
+              <span className="hidden md:inline font-semibold">App</span>
             </Button>
           )}
 

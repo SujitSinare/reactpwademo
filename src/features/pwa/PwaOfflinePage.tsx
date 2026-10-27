@@ -12,6 +12,9 @@ import {
   RotateCcw,
   ShieldCheck,
   Send,
+  HelpCircle,
+  Apple,
+  Laptop,
 } from 'lucide-react';
 import { usePwa } from './PwaContext';
 import { storage, PendingSyncAction } from '../../lib/storage';
@@ -21,7 +24,17 @@ import { Badge } from '../../components/ui/Badge';
 import { formatDateTimeIndian } from '../../lib/utils';
 
 export const PwaOfflinePage: React.FC = () => {
-  const { isOnline, isInstalled, isInstallable, installApp, swRegistration, showToast } = usePwa();
+  const {
+    isOnline,
+    isInstalled,
+    isInstallable,
+    canPromptNativeInstall,
+    platform,
+    installApp,
+    openInstallGuide,
+    swRegistration,
+    showToast,
+  } = usePwa();
 
   const [pendingSync, setPendingSync] = useState<PendingSyncAction[]>(() => storage.getPendingSyncActions());
   const [localDraft, setLocalDraft] = useState<any>(() => {
@@ -97,14 +110,32 @@ export const PwaOfflinePage: React.FC = () => {
             <Smartphone className="w-4 h-4 text-teal-600" />
           </div>
           <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-2">
-            {isInstalled ? 'Installed as App' : isInstallable ? 'Install Available' : 'Browser Session'}
+            {isInstalled ? 'Installed as App' : 'Browser Session'}
           </p>
-          <div className="mt-1">
-            {isInstallable && (
-              <Button variant="primary" size="sm" onClick={installApp} className="text-[11px] py-1 h-7">
-                <Download className="w-3 h-3 mr-1" />
-                <span>Install Standalone PWA</span>
-              </Button>
+          <div className="mt-1.5 flex flex-col gap-1.5">
+            {isInstalled ? (
+              <Badge variant="success" className="w-fit text-[10px]">
+                Standalone Mode Active
+              </Badge>
+            ) : (
+              <>
+                <p className="text-[11px] text-slate-400">
+                  {platform === 'ios'
+                    ? 'iOS Safari Add-to-Home available'
+                    : canPromptNativeInstall
+                    ? 'Native install prompt ready'
+                    : 'Installable on mobile & desktop'}
+                </p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={installApp}
+                  className="text-[11px] py-1 h-7 w-fit"
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  <span>{canPromptNativeInstall ? 'Install Standalone PWA' : 'Install / Add to Home'}</span>
+                </Button>
+              </>
             )}
           </div>
         </Card>
@@ -222,6 +253,90 @@ export const PwaOfflinePage: React.FC = () => {
               <Button variant="outline" size="sm" onClick={handleClearCache} className="text-xs">
                 Flush Asset Cache
               </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Mobile & Desktop PWA Installation Guide Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+            <CardTitle className="text-sm">Mobile & Desktop PWA Installation Guide</CardTitle>
+          </div>
+          {isInstalled ? (
+            <Badge variant="success">Standalone Mode Active</Badge>
+          ) : (
+            <Badge variant="outline">
+              Platform: {platform === 'ios' ? 'Apple iOS' : platform === 'android' ? 'Android' : 'Desktop'}
+            </Badge>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4 text-xs">
+          <p className="text-slate-500 dark:text-slate-400">
+            Unity LOS is engineered as a progressive web application conforming to modern mobile and desktop installation standards.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                <Apple className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                <span>iPhone & iPad (Safari)</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                iOS does not support automatic prompts. Tap the <strong>Share</strong> button (□↑) in Safari, then tap <strong>Add to Home Screen</strong> (+).
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                <Smartphone className="w-4 h-4 text-teal-600" />
+                <span>Android (Chrome)</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Chrome captures the native install prompt. If not primed automatically, open Chrome menu (⋮) and tap <strong>Install app</strong>.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                <Laptop className="w-4 h-4 text-blue-500" />
+                <span>Desktop (Chrome / Edge)</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Click the install icon (⤓) in the browser address bar, or use browser menu → <strong>Save and share</strong> → <strong>Install Unity LOS</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <span className="text-[11px] text-slate-500">
+              {isInstalled
+                ? 'App is currently running in standalone display mode.'
+                : 'Need help installing? View detailed step-by-step visual instructions.'}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openInstallGuide}
+                className="text-xs gap-1.5"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-teal-600" />
+                <span>Visual Instructions</span>
+              </Button>
+              {!isInstalled && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={installApp}
+                  className="text-xs gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{canPromptNativeInstall ? 'Install App' : 'Add to Home Screen'}</span>
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

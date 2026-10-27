@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Toast } from '../ui/Toast';
+import { InstallGuideModal } from './InstallGuideModal';
 import { usePwa } from '../../features/pwa/PwaContext';
 import { RefreshCw, ShieldAlert } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -62,6 +63,9 @@ export const AppLayout: React.FC = () => {
 
       {/* Global Toast Alerts */}
       <Toast />
+
+      {/* Responsive PWA Installation Guide Modal */}
+      <InstallGuideModal />
     </div>
   );
 };

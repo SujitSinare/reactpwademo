@@ -16,8 +16,10 @@ import {
   ShieldAlert,
   ChevronRight,
   X,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/AuthContext';
+import { usePwa } from '../../features/pwa/PwaContext';
 import { storage } from '../../lib/storage';
 import { cn } from '../../lib/utils';
 
@@ -28,6 +30,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser } = useAuth();
+  const { isInstalled, installApp } = usePwa();
   const applications = storage.getApplications();
 
   // Dynamic status badges
@@ -176,6 +179,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             );
           })}
         </div>
+
+        {/* Install Mobile App Banner */}
+        {!isInstalled && (
+          <div className="mx-3 mb-2 p-3 rounded-xl bg-gradient-to-r from-teal-950/70 to-slate-900 border border-teal-500/30 text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-teal-300 text-xs">
+              <Smartphone className="w-3.5 h-3.5 text-teal-400" />
+              <span>Install Mobile App</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+              Works offline with standalone home screen launch.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                installApp();
+                if (window.innerWidth < 1024) onClose();
+              }}
+              className="mt-2.5 w-full py-1.5 px-3 rounded-lg bg-teal-600 hover:bg-teal-500 active:scale-98 text-white font-semibold text-[11px] flex items-center justify-center gap-1.5 shadow-sm transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Install Unity LOS</span>
+            </button>
+          </div>
+        )}
 
         {/* Active Demo Role Card */}
         <div className="p-3.5 m-3 rounded-xl bg-slate-800/80 border border-slate-700/60">

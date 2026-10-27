@@ -10,6 +10,9 @@ import {
   Building2,
   User,
   CheckCircle2,
+  Smartphone,
+  Download,
+  HelpCircle,
 } from 'lucide-react';
 import { storage } from '../../lib/storage';
 import { useAuth } from '../auth/AuthContext';
@@ -21,7 +24,14 @@ import { Modal } from '../../components/ui/Modal';
 
 export const SettingsPage: React.FC = () => {
   const { currentUser, switchUser, allUsers } = useAuth();
-  const { showToast } = usePwa();
+  const {
+    isInstalled,
+    canPromptNativeInstall,
+    platform,
+    installApp,
+    openInstallGuide,
+    showToast,
+  } = usePwa();
 
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => storage.getTheme());
   const [showResetModal, setShowResetModal] = useState(false);
@@ -138,6 +148,66 @@ export const SettingsPage: React.FC = () => {
               <Moon className="w-4 h-4 text-cyan-400" />
               <span>Dark Mode</span>
             </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* PWA & Standalone App Installation */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+            <CardTitle className="text-sm">PWA & Standalone Application</CardTitle>
+          </div>
+          {isInstalled ? (
+            <Badge variant="success">Standalone App Active</Badge>
+          ) : (
+            <Badge variant="outline">
+              Platform: {platform === 'ios' ? 'Apple iOS' : platform === 'android' ? 'Android' : 'Desktop'}
+            </Badge>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4 text-xs">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <p className="font-semibold text-slate-800 dark:text-slate-200">
+                {isInstalled
+                  ? 'Unity LOS is running as an installed standalone app.'
+                  : 'Install Unity LOS directly to your home screen or desktop.'}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                {isInstalled
+                  ? 'Browser navigation chrome and URL bars are disabled for optimal screen space and native performance.'
+                  : platform === 'ios'
+                  ? 'On iOS Safari, tap the Share button (□↑) and choose "Add to Home Screen".'
+                  : canPromptNativeInstall
+                  ? 'Android Chrome native install prompt is ready to trigger.'
+                  : 'Click below to launch the step-by-step installation guide.'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openInstallGuide}
+                className="text-xs gap-1.5"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-teal-600" />
+                <span>Instructions</span>
+              </Button>
+              {!isInstalled && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={installApp}
+                  className="text-xs gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{canPromptNativeInstall ? 'Install App' : 'Add to Home'}</span>
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
