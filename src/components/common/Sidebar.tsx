@@ -108,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
       >
         {/* Brand Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] lg:pt-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <UnityLogo variant="full" theme="dark" size="sm" />
           </div>
@@ -193,7 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
 
         {/* Active Demo Role Card */}
-        <div className="p-3.5 m-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+        <div className="p-3.5 m-3 mb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] lg:mb-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
           <div className="flex items-center gap-3">
             <div className="relative">
               <img

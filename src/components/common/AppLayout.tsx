@@ -46,7 +46,7 @@ export const AppLayout: React.FC = () => {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 py-4 px-6 text-center text-xs text-slate-500 dark:text-slate-400">
+        <footer className="border-t border-slate-200 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-6 text-center text-xs text-slate-500 dark:text-slate-400">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl mx-auto">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-slate-700 dark:text-slate-300">Unity Small Finance Bank</span>

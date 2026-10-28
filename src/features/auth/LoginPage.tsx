@@ -70,7 +70,7 @@ export const LoginPage: React.FC = () => {
       <div className="absolute -top-20 -left-20 w-80 h-80 bg-slate-800/40 rounded-full blur-2xl pointer-events-none" />
 
       {/* Top Bar / Bank Banner */}
-      <header className="relative z-10 w-full border-b border-slate-800/60 bg-[#0E1217]/80 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between">
+      <header className="relative z-10 w-full border-b border-slate-800/60 bg-[#0E1217]/80 backdrop-blur-md px-4 sm:px-8 py-3.5 pt-[calc(0.875rem+env(safe-area-inset-top,0px))] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-[#FCB913] animate-pulse" />
           <span className="text-xs font-semibold tracking-wide text-slate-300 uppercase">
@@ -293,7 +293,7 @@ export const LoginPage: React.FC = () => {
       </main>
 
       {/* Page Footer */}
-      <footer className="relative z-10 w-full py-4 px-4 text-center border-t border-slate-900 bg-[#07090C] text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto gap-2">
+      <footer className="relative z-10 w-full py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] px-4 text-center border-t border-slate-900 bg-[#07090C] text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto gap-2">
         <div className="flex items-center gap-2">
           <span className="text-slate-300 font-medium">Unity Small Finance Bank Limited</span>
           <span>•</span>

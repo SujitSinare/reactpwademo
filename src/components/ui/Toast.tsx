@@ -23,7 +23,7 @@ export const Toast: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 max-w-md w-full animate-in slide-in-from-bottom-5 duration-200 px-4">
+    <div className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-5 z-50 max-w-md w-full animate-in slide-in-from-bottom-5 duration-200 px-4">
       <div
         className={cn(
           'flex items-start gap-3 p-4 bg-white dark:bg-slate-900 rounded-xl shadow-xl border',
