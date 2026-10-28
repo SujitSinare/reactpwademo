@@ -125,7 +125,7 @@ export const NewApplicationPage: React.FC = () => {
     register,
     handleSubmit,
     watch,
-    setValue,
+    // setValue,
     trigger,
     formState: { errors },
   } = useForm<ApplicationFormData>({
@@ -421,20 +421,18 @@ export const NewApplicationPage: React.FC = () => {
                 }}
               >
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
-                    isCompleted
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${isCompleted
                       ? 'bg-teal-600 text-white'
                       : isCurrent
-                      ? 'bg-teal-500/20 text-teal-700 dark:text-teal-300 border-2 border-teal-500 shadow-sm'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                  }`}
+                        ? 'bg-teal-500/20 text-teal-700 dark:text-teal-300 border-2 border-teal-500 shadow-sm'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                    }`}
                 >
                   {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                 </div>
                 <span
-                  className={`text-[11px] font-medium mt-1.5 hidden sm:block truncate w-full ${
-                    isCurrent ? 'text-teal-600 dark:text-teal-400 font-semibold' : 'text-slate-500'
-                  }`}
+                  className={`text-[11px] font-medium mt-1.5 hidden sm:block truncate w-full ${isCurrent ? 'text-teal-600 dark:text-teal-400 font-semibold' : 'text-slate-500'
+                    }`}
                 >
                   {s.title}
                 </span>
@@ -849,17 +847,15 @@ export const NewApplicationPage: React.FC = () => {
               {/* Dynamic FOIR & Surplus Card */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div
-                  className={`p-4 rounded-xl border ${
-                    calculatedFOIR <= 50
+                  className={`p-4 rounded-xl border ${calculatedFOIR <= 50
                       ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800'
                       : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'
-                  }`}
+                    }`}
                 >
                   <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Fixed Obligation Ratio (FOIR)</p>
                   <p
-                    className={`text-2xl font-bold mt-1 ${
-                      calculatedFOIR <= 50 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
-                    }`}
+                    className={`text-2xl font-bold mt-1 ${calculatedFOIR <= 50 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
+                      }`}
                   >
                     {calculatedFOIR}%
                   </p>
@@ -875,9 +871,9 @@ export const NewApplicationPage: React.FC = () => {
                   <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                     {formatCurrencyINR(
                       Number(formValues.monthlyIncome || 0) -
-                        (Number(formValues.existingMonthlyObligations || 0) +
-                          Number(formValues.estimatedMonthlyExpenses || 0) +
-                          calculatedEMI)
+                      (Number(formValues.existingMonthlyObligations || 0) +
+                        Number(formValues.estimatedMonthlyExpenses || 0) +
+                        calculatedEMI)
                     )}
                   </p>
                   <p className="text-[11px] text-slate-400 mt-0.5">Discretionary post-EMI cash buffer</p>
@@ -1053,9 +1049,8 @@ export const NewApplicationPage: React.FC = () => {
                   <div>
                     <span className="text-slate-400 block text-[10px]">Fixed Obligation Ratio (FOIR)</span>
                     <span
-                      className={`font-bold ${
-                        calculatedFOIR <= 50 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                      }`}
+                      className={`font-bold ${calculatedFOIR <= 50 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                        }`}
                     >
                       {calculatedFOIR}%
                     </span>

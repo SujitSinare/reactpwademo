@@ -1,6 +1,8 @@
 import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../../components/common/AppLayout';
+import { ProtectedRoute } from '../../components/common/ProtectedRoute';
+import { LoginPage } from '../../features/auth/LoginPage';
 import { DashboardPage } from '../../features/dashboard/DashboardPage';
 import { ApplicationsListPage } from '../../features/applications/ApplicationsListPage';
 import { NewApplicationPage } from '../../features/applications/NewApplicationPage';
@@ -18,8 +20,17 @@ import { RouteErrorBoundary } from '../../components/common/RouteErrorBoundary';
 
 export const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <LoginPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
     path: '/',
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     errorElement: <RouteErrorBoundary />,
     children: [
       {

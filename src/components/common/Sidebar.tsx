@@ -22,6 +22,7 @@ import { useAuth } from '../../features/auth/AuthContext';
 import { usePwa } from '../../features/pwa/PwaContext';
 import { storage } from '../../lib/storage';
 import { cn } from '../../lib/utils';
+import { UnityLogo } from './UnityLogo';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -107,22 +108,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
       >
         {/* Brand Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 via-teal-500 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg shadow-teal-500/20">
-              <div className="w-full h-full bg-unity-navy-950 rounded-[10px] flex items-center justify-center">
-                <span className="font-bold text-lg text-teal-400">U</span>
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-base text-white tracking-tight">Unity LOS</span>
-                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                  Demo
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium leading-tight">Unity Small Finance Bank</p>
-            </div>
+        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <UnityLogo variant="full" theme="dark" size="sm" />
           </div>
 
           <button

@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ExternalLink,
   ShieldCheck,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/AuthContext';
 import { usePwa } from '../../features/pwa/PwaContext';
@@ -28,7 +29,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, switchUser, switchRole, allUsers } = useAuth();
+  const { currentUser, switchUser, switchRole, allUsers, logout } = useAuth();
   const { isOnline, isInstallable, installApp, isInstalled } = usePwa();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -374,8 +375,25 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                     );
                   })}
                 </div>
-                <div className="mt-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 text-center">
-                  Frontend simulation. Production permissions are enforced on the API server.
+                <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setShowRoleDropdown(false);
+                      navigate('/login');
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl flex items-center justify-between text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-semibold transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <LogOut className="w-4 h-4" />
+                      Sign Out of Session
+                    </span>
+                    <span className="text-[10px] uppercase font-mono text-slate-400">Exit</span>
+                  </button>
+                </div>
+                <div className="mt-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 text-center">
+                  Unity SFB Internal System • Session Encrypted
                 </div>
               </div>
             )}

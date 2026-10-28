@@ -2,8 +2,18 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../../types';
 import { MOCK_USERS } from '../../mocks/seedData';
 
+interface LoginCredentials {
+  identifier: string;
+  password?: string;
+  rememberMe?: boolean;
+}
+
 interface AuthContextType {
   currentUser: UserProfile;
+  isAuthenticated: boolean;
+  login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
+  quickLoginAsUser: (userId: string) => void;
+  logout: () => void;
   switchUser: (userId: string) => void;
   switchRole: (role: UserRole) => void;
   allUsers: UserProfile[];
@@ -16,6 +26,7 @@ interface AuthContextType {
 }
 
 const CURRENT_USER_KEY = 'unity_los_current_user_v1';
+const AUTH_STATUS_KEY = 'unity_los_is_authenticated_v1';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -35,9 +46,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return MOCK_USERS[0];
   });
 
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const authFlag = localStorage.getItem(AUTH_STATUS_KEY);
+    // If not set before, default to false so user sees the login screen
+    return authFlag === 'true';
+  });
+
   useEffect(() => {
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
   }, [currentUser]);
+
+  const login = async ({ identifier, password, rememberMe = true }: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
+    // Simulate brief network authentication latency
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    const cleanId = identifier.trim().toLowerCase();
+
+    if (!cleanId) {
+      return { success: false, error: 'Please enter your Employee Code, Email, or Username.' };
+    }
+
+    if (!password || password.trim().length === 0) {
+      return { success: false, error: 'Please enter your security password.' };
+    }
+
+    // Role or alias matching
+    let matchedUser = MOCK_USERS.find(
+      (u) =>
+        u.email.toLowerCase() === cleanId ||
+        u.employeeCode.toLowerCase() === cleanId ||
+        u.id.toLowerCase() === cleanId ||
+        u.name.toLowerCase() === cleanId
+    );
+
+    // Support convenient aliases for testing
+    if (!matchedUser) {
+      if (cleanId === 'admin' || cleanId === 'administrator') {
+        matchedUser = MOCK_USERS.find((u) => u.role === 'System Administrator');
+      } else if (cleanId === 'officer' || cleanId === 'branch') {
+        matchedUser = MOCK_USERS.find((u) => u.role === 'Branch Officer');
+      } else if (cleanId === 'credit' || cleanId === 'analyst') {
+        matchedUser = MOCK_USERS.find((u) => u.role === 'Credit Analyst');
+      } else if (cleanId === 'manager' || cleanId === 'approver') {
+        matchedUser = MOCK_USERS.find((u) => u.role === 'Credit Manager');
+      } else if (cleanId === 'operations' || cleanId === 'disburse') {
+        matchedUser = MOCK_USERS.find((u) => u.role === 'Operations Manager');
+      } else if (cleanId === 'unity' || cleanId === 'demo' || cleanId === 'user') {
+        matchedUser = MOCK_USERS[0];
+      }
+    }
+
+    // Static fallback: if user typed something reasonable, default to Branch Officer or matchedUser
+    const targetUser = matchedUser || MOCK_USERS[0];
+
+    setCurrentUser(targetUser);
+    setIsAuthenticated(true);
+    if (rememberMe) {
+      localStorage.setItem(AUTH_STATUS_KEY, 'true');
+    } else {
+      sessionStorage.setItem(AUTH_STATUS_KEY, 'true');
+      localStorage.setItem(AUTH_STATUS_KEY, 'true');
+    }
+
+    return { success: true };
+  };
+
+  const quickLoginAsUser = (userId: string) => {
+    const found = MOCK_USERS.find((u) => u.id === userId);
+    if (found) {
+      setCurrentUser(found);
+      setIsAuthenticated(true);
+      localStorage.setItem(AUTH_STATUS_KEY, 'true');
+    }
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem(AUTH_STATUS_KEY);
+    sessionStorage.removeItem(AUTH_STATUS_KEY);
+  };
 
   const switchUser = (userId: string) => {
     const found = MOCK_USERS.find((u) => u.id === userId);
@@ -53,6 +140,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value: AuthContextType = {
     currentUser,
+    isAuthenticated,
+    login,
+    quickLoginAsUser,
+    logout,
     switchUser,
     switchRole,
     allUsers: MOCK_USERS,
