@@ -13,6 +13,7 @@ import {
   Smartphone,
   Download,
   HelpCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { storage } from '../../lib/storage';
 import { useAuth } from '../auth/AuthContext';
@@ -26,10 +27,18 @@ export const SettingsPage: React.FC = () => {
   const { currentUser, switchUser, allUsers } = useAuth();
   const {
     isInstalled,
+    isStandalone,
     canPromptNativeInstall,
     platform,
     installApp,
     openInstallGuide,
+    resetInstallStatus,
+    needRefresh,
+    updateApp,
+    checkForUpdate,
+    isCheckingUpdate,
+    appVersion,
+    lastUpdateChecked,
     showToast,
   } = usePwa();
 
@@ -159,8 +168,10 @@ export const SettingsPage: React.FC = () => {
             <Smartphone className="w-4 h-4 text-teal-600 dark:text-teal-400" />
             <CardTitle className="text-sm">PWA & Standalone Application</CardTitle>
           </div>
-          {isInstalled ? (
+          {isStandalone ? (
             <Badge variant="success">Standalone App Active</Badge>
+          ) : isInstalled ? (
+            <Badge variant="success">Installed on Device</Badge>
           ) : (
             <Badge variant="outline">
               Platform: {platform === 'ios' ? 'Apple iOS' : platform === 'android' ? 'Android' : 'Desktop'}
@@ -168,16 +179,77 @@ export const SettingsPage: React.FC = () => {
           )}
         </CardHeader>
         <CardContent className="space-y-4 text-xs">
+          {/* Version & Update Lifecycle Section */}
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold text-slate-800 dark:text-slate-200">
+                  Application Version & Service Worker Updates
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Installed Release: <strong className="text-slate-700 dark:text-slate-300">v{appVersion}</strong>
+                  {lastUpdateChecked && (
+                    <span className="ml-2 text-slate-400">
+                      (Last checked: {lastUpdateChecked.toLocaleTimeString()})
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => checkForUpdate(true)}
+                  disabled={isCheckingUpdate}
+                  className="text-xs gap-1.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-teal-600 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                  <span>{isCheckingUpdate ? 'Checking...' : 'Check for Updates'}</span>
+                </Button>
+                {needRefresh && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={updateApp}
+                    className="text-xs gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shadow animate-pulse"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-slate-950" />
+                    <span>Reload & Update</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {needRefresh && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg text-amber-900 dark:text-amber-200 text-[11px] flex items-center justify-between gap-2">
+                <span>A new version of the PWA is downloaded and waiting. Reload to apply latest updates.</span>
+                <button
+                  type="button"
+                  onClick={updateApp}
+                  className="font-bold underline hover:text-amber-800 dark:hover:text-amber-300 shrink-0 ml-2"
+                >
+                  Reload Now
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Installation & Duplicate Restriction Section */}
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <p className="font-semibold text-slate-800 dark:text-slate-200">
-                {isInstalled
-                  ? 'Unity LOS is running as an installed standalone app.'
-                  : 'Install Unity LOS directly to your home screen or desktop.'}
+                {isStandalone
+                  ? 'Running in Standalone App Mode'
+                  : isInstalled
+                  ? 'App Installed on this Device'
+                  : 'Install Unity LOS to Home Screen'}
               </p>
               <p className="text-[11px] text-slate-400">
-                {isInstalled
+                {isStandalone
                   ? 'Browser navigation chrome and URL bars are disabled for optimal screen space and native performance.'
+                  : isInstalled
+                  ? 'Unity LOS is already installed. Mobile operating systems (Android WebAPK & iOS) prohibit duplicate installations. Launch it directly from your device home screen.'
                   : platform === 'ios'
                   ? 'On iOS Safari, tap the Share button (□↑) and choose "Add to Home Screen".'
                   : canPromptNativeInstall
@@ -246,6 +318,24 @@ export const SettingsPage: React.FC = () => {
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset Database</span>
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div>
+              <p className="font-semibold text-slate-800 dark:text-slate-200">Reset PWA Device Installation Flag</p>
+              <p className="text-slate-400 text-[11px]">
+                Clears the local installation tracking flag so you can re-test the installation prompt on this browser.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetInstallStatus}
+              className="text-xs text-slate-600 dark:text-slate-300 gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Install Status</span>
             </Button>
           </div>
         </CardContent>

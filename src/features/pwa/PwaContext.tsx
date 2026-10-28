@@ -3,6 +3,8 @@ import { storage } from '../../lib/storage';
 
 export type PlatformType = 'ios' | 'android' | 'desktop' | 'other';
 
+export const APP_VERSION = '1.0.0';
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -12,10 +14,12 @@ interface PwaContextType {
   isInstallable: boolean;
   canPromptNativeInstall: boolean;
   isInstalled: boolean;
+  isStandalone: boolean;
   platform: PlatformType;
   isIos: boolean;
   isAndroid: boolean;
   installApp: () => Promise<void>;
+  resetInstallStatus: () => void;
   isInstallGuideOpen: boolean;
   openInstallGuide: () => void;
   closeInstallGuide: () => void;
@@ -29,6 +33,10 @@ interface PwaContextType {
   sendTestPushNotification: (customTitle?: string, customBody?: string) => Promise<boolean>;
   swRegistration: ServiceWorkerRegistration | null;
   needRefresh: boolean;
+  isCheckingUpdate: boolean;
+  lastUpdateChecked: Date | null;
+  appVersion: string;
+  checkForUpdate: (showFeedback?: boolean) => Promise<boolean>;
   updateApp: () => void;
   toastMessage: { id: string; title: string; message: string; type: 'info' | 'success' | 'warning' | 'alert' } | null;
   showToast: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'alert') => void;
@@ -49,7 +57,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-const checkIsInstalled = (): boolean => {
+const checkIsStandalone = (): boolean => {
   if (typeof window === 'undefined') return false;
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
@@ -58,6 +66,16 @@ const checkIsInstalled = (): boolean => {
     (window.navigator as any).standalone === true ||
     document.referrer.includes('android-app://')
   );
+};
+
+const checkIsInstalled = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  if (checkIsStandalone()) return true;
+  try {
+    return localStorage.getItem('pwa_installed_on_device') === 'true';
+  } catch {
+    return false;
+  }
 };
 
 const detectPlatform = (): PlatformType => {
@@ -76,12 +94,15 @@ const PwaContext = createContext<PwaContextType | undefined>(undefined);
 
 export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isStandalone, setIsStandalone] = useState<boolean>(() => checkIsStandalone());
   const [isInstalled, setIsInstalled] = useState<boolean>(() => checkIsInstalled());
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [platform] = useState<PlatformType>(() => detectPlatform());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [needRefresh, setNeedRefresh] = useState(false);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [lastUpdateChecked, setLastUpdateChecked] = useState<Date | null>(null);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() => {
     return typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default';
   });
@@ -92,7 +113,7 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isIos = platform === 'ios';
   const isAndroid = platform === 'android';
   const canPromptNativeInstall = Boolean(deferredPrompt);
-  // Installable if not installed and (we have native prompt, or device is iOS/Android/Desktop which can be installed)
+  // Installable ONLY if not already installed on this device
   const isInstallable = !isInstalled;
 
   const showToast = (title: string, message: string, type: 'info' | 'success' | 'warning' | 'alert' = 'info') => {
@@ -105,11 +126,42 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearToast = () => setToastMessage(null);
 
+  // Synchronize standalone mode and initial installation flag
+  useEffect(() => {
+    if (checkIsStandalone()) {
+      setIsStandalone(true);
+      setIsInstalled(true);
+      try {
+        localStorage.setItem('pwa_installed_on_device', 'true');
+      } catch {}
+    }
+  }, []);
+
+  // Check via modern standard getInstalledRelatedApps() API if supported (Chromium Android & Desktop)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'getInstalledRelatedApps' in navigator) {
+      (navigator as any).getInstalledRelatedApps()
+        .then((relatedApps: any[]) => {
+          if (Array.isArray(relatedApps) && relatedApps.length > 0) {
+            setIsInstalled(true);
+            try {
+              localStorage.setItem('pwa_installed_on_device', 'true');
+            } catch {}
+          }
+        })
+        .catch((err: any) => {
+          console.debug('getInstalledRelatedApps query skipped or unavailable:', err);
+        });
+    }
+  }, []);
+
   // Online / Offline & Standalone Mode Listeners
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       showToast('Back Online', 'Reconnected to network. Syncing local drafts...', 'success');
+      // Silently check for service worker update when network reconnects
+      checkForUpdate(false);
     };
     const handleOffline = () => {
       setIsOnline(false);
@@ -123,7 +175,11 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const mql = window.matchMedia('(display-mode: standalone)');
     const handleMql = (e: MediaQueryListEvent) => {
       if (e.matches) {
+        setIsStandalone(true);
         setIsInstalled(true);
+        try {
+          localStorage.setItem('pwa_installed_on_device', 'true');
+        } catch {}
       }
     };
     if (mql.addEventListener) {
@@ -139,31 +195,65 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // PWA beforeinstallprompt Listener
+  // PWA beforeinstallprompt & appinstalled Listeners
   useEffect(() => {
     const handler = (e: Event) => {
+      // If already installed on this device, reject and prevent prompt
+      if (isInstalled) {
+        e.preventDefault();
+        return;
+      }
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
-    window.addEventListener('appinstalled', () => {
+    const handleAppInstalled = () => {
       setIsInstalled(true);
+      try {
+        localStorage.setItem('pwa_installed_on_device', 'true');
+      } catch {}
       setDeferredPrompt(null);
       setIsInstallGuideOpen(false);
       showToast('PWA Installed', 'Unity LOS is now installed on your device!', 'success');
-    });
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [isInstalled]);
 
-  // Register Service Worker & check push subscriptions
+  // Register Service Worker & check push subscriptions & detect updatefound lifecycle
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
         setSwRegistration(reg);
+
+        // Check if there is already a waiting service worker
+        if (reg.waiting) {
+          setNeedRefresh(true);
+        }
+
+        // Listen for new service worker being installed
+        reg.addEventListener('updatefound', () => {
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.addEventListener('statechange', () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // A new version was installed and is waiting for user reload!
+                setNeedRefresh(true);
+                showToast(
+                  'Update Ready',
+                  'A new version of Unity LOS is available. Tap Reload to update.',
+                  'info'
+                );
+              }
+            });
+          }
+        });
 
         // Check active push subscription
         reg.pushManager.getSubscription().then((sub) => {
@@ -173,15 +263,56 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         });
       });
+
+      // Reload smoothly when the new service worker takes over control
+      const handleControllerChange = () => {
+        window.location.reload();
+      };
+      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+      return () => {
+        navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      };
     }
   }, []);
 
-  const openInstallGuide = () => setIsInstallGuideOpen(true);
+  // Automatically check for service worker update when mobile device resumes app from background
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Silently query for updates on app resume
+        checkForUpdate(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [swRegistration]);
+
+  const openInstallGuide = () => {
+    if (isInstalled) {
+      showToast(
+        'Already Installed',
+        'Unity LOS is already installed on your device. Check your home screen or app drawer.',
+        'info'
+      );
+      return;
+    }
+    setIsInstallGuideOpen(true);
+  };
+
   const closeInstallGuide = () => setIsInstallGuideOpen(false);
 
+  // Guarded install action: explicitly restricts duplicate installation
   const installApp = async () => {
     if (isInstalled) {
-      showToast('Already Installed', 'Unity LOS is already running in installed mode.', 'info');
+      showToast(
+        'Already Installed',
+        'Unity LOS is already installed on your device. Mobile operating systems prohibit installing the same PWA twice.',
+        'info'
+      );
       return;
     }
 
@@ -192,8 +323,12 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
           setIsInstalled(true);
+          try {
+            localStorage.setItem('pwa_installed_on_device', 'true');
+          } catch {}
           setDeferredPrompt(null);
           setIsInstallGuideOpen(false);
+          showToast('Install Started', 'Unity LOS is being installed to your device.', 'success');
         } else {
           showToast('Install Cancelled', 'You can install Unity LOS anytime from the menu.', 'info');
         }
@@ -202,15 +337,68 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsInstallGuideOpen(true);
       }
     } else {
-      // On iOS Safari, or Android Chrome when prompt hasn't fired yet, or Desktop,
-      // show the interactive installation guide with exact device instructions!
+      // On iOS Safari, or Android Chrome when prompt hasn't fired yet, show guide
       setIsInstallGuideOpen(true);
     }
   };
 
+  // Reset installation status (intended for testing and development)
+  const resetInstallStatus = () => {
+    try {
+      localStorage.removeItem('pwa_installed_on_device');
+    } catch {}
+    const standalone = checkIsStandalone();
+    setIsStandalone(standalone);
+    setIsInstalled(standalone);
+    showToast('Install Status Cleared', 'Device install flag has been reset for testing.', 'info');
+  };
+
+  // Check for updates manually or programmatically
+  const checkForUpdate = async (showFeedback = true): Promise<boolean> => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      if (showFeedback) {
+        showToast('Updates Not Supported', 'Service worker is not supported in this browser.', 'warning');
+      }
+      return false;
+    }
+
+    setIsCheckingUpdate(true);
+    try {
+      const reg = swRegistration || (await navigator.serviceWorker.getRegistration());
+      if (reg) {
+        await reg.update();
+        setLastUpdateChecked(new Date());
+
+        if (reg.waiting) {
+          setNeedRefresh(true);
+          if (showFeedback) {
+            showToast('Update Available', 'A newer version is ready. Click Update & Reload to apply.', 'info');
+          }
+          return true;
+        } else {
+          if (showFeedback) {
+            showToast('App Up to Date', `You are running the latest version of Unity LOS (v${APP_VERSION}).`, 'success');
+          }
+          return false;
+        }
+      }
+      return false;
+    } catch (err: any) {
+      console.warn('Update check failed:', err);
+      if (showFeedback) {
+        showToast('Check Failed', 'Could not check for updates. You might be offline.', 'warning');
+      }
+      return false;
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
+  // Trigger skip waiting and reload the application
   const updateApp = () => {
     if (swRegistration && swRegistration.waiting) {
       swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
       window.location.reload();
     }
   };
@@ -268,7 +456,7 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           body: JSON.stringify({ subscription: sub }),
         });
       } catch {
-        // Backend offline or running in pure client dev mode - that's okay, client subscription is active!
+        // Backend offline or running in pure client dev mode
       }
 
       showToast('Push Subscribed', 'Push subscription registered with VAPID credentials.', 'success');
@@ -365,10 +553,12 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isInstallable,
     canPromptNativeInstall,
     isInstalled,
+    isStandalone,
     platform,
     isIos,
     isAndroid,
     installApp,
+    resetInstallStatus,
     isInstallGuideOpen,
     openInstallGuide,
     closeInstallGuide,
@@ -382,6 +572,10 @@ export const PwaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sendTestPushNotification,
     swRegistration,
     needRefresh,
+    isCheckingUpdate,
+    lastUpdateChecked,
+    appVersion: APP_VERSION,
+    checkForUpdate,
     updateApp,
     toastMessage,
     showToast,

@@ -49,12 +49,15 @@ export const InstallGuideModal: React.FC = () => {
       <div className="space-y-5 text-xs">
         {/* Already Installed Alert */}
         {isInstalled ? (
-          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-sm">App Already Installed</p>
-              <p className="text-[11px] mt-0.5">
-                Unity LOS is currently running in standalone installed mode on this device.
+              <p className="font-bold text-sm">App Already Installed on This Device</p>
+              <p className="text-[11px] mt-1 leading-relaxed text-emerald-900 dark:text-emerald-200">
+                Unity LOS is already installed on this device. Mobile operating systems (such as Android WebAPK and iOS Safari) prohibit or restrict installing duplicate copies of the same PWA.
+              </p>
+              <p className="text-[11px] mt-1 font-medium text-emerald-800 dark:text-emerald-300">
+                To launch the application, tap the <strong>Unity LOS</strong> icon directly from your device Home Screen or App Drawer.
               </p>
             </div>
           </div>
@@ -191,7 +194,7 @@ export const InstallGuideModal: React.FC = () => {
         {/* TAB 2: Android Instructions */}
         {activeTab === 'android' && (
           <div className="space-y-3">
-            {canPromptNativeInstall ? (
+            {canPromptNativeInstall && !isInstalled ? (
               <div className="p-4 rounded-xl bg-teal-50/80 dark:bg-teal-950/40 border border-teal-500/40 text-center space-y-2">
                 <p className="font-bold text-sm text-teal-900 dark:text-teal-200">
                   Ready to Install on this Device
@@ -260,7 +263,7 @@ export const InstallGuideModal: React.FC = () => {
         {/* TAB 3: Desktop Instructions */}
         {activeTab === 'desktop' && (
           <div className="space-y-3">
-            {canPromptNativeInstall ? (
+            {canPromptNativeInstall && !isInstalled ? (
               <div className="p-4 rounded-xl bg-teal-50/80 dark:bg-teal-950/40 border border-teal-500/40 text-center space-y-2">
                 <p className="font-bold text-sm text-teal-900 dark:text-teal-200">
                   Ready to Install on Desktop

@@ -11,7 +11,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: 'auto',
       manifest: {
         name: 'Unity Small Finance Bank - LOS',
@@ -25,6 +25,13 @@ export default defineConfig({
         orientation: 'portrait-primary',
         start_url: '/',
         scope: '/',
+        related_applications: [
+          {
+            platform: 'webapp',
+            url: '/manifest.webmanifest',
+            id: '/'
+          }
+        ],
         icons: [
           {
             src: '/icons/icon-192x192.png',

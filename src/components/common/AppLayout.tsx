@@ -22,18 +22,20 @@ export const AppLayout: React.FC = () => {
         {/* Top Header */}
         <Header onToggleSidebar={() => setIsSidebarOpen(true)} />
 
-        {/* New Version PWA Banner */}
+        {/* New Version PWA Banner: Displays when update is detected and waiting */}
         {needRefresh && (
-          <div className="bg-teal-600 text-white px-4 py-2.5 flex items-center justify-between text-xs shadow-md">
+          <div className="bg-gradient-to-r from-teal-700 to-amber-700 text-white px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-md border-b border-amber-400/30">
             <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>A new version of Unity LOS is available. Update now to load the latest features.</span>
+              <RefreshCw className="w-4 h-4 animate-spin shrink-0 text-amber-300" />
+              <span className="font-medium">
+                A new version of Unity LOS has been downloaded. Reload now to load the latest features.
+              </span>
             </div>
             <Button
               variant="navy"
               size="sm"
               onClick={updateApp}
-              className="text-xs bg-slate-900 text-white hover:bg-slate-800 border-none py-1"
+              className="text-xs bg-slate-950 text-white hover:bg-slate-900 border border-amber-300/40 py-1 px-3 self-end sm:self-auto shrink-0 shadow"
             >
               Update & Reload
             </Button>

@@ -27,12 +27,18 @@ export const PwaOfflinePage: React.FC = () => {
   const {
     isOnline,
     isInstalled,
+    isStandalone,
     isInstallable,
     canPromptNativeInstall,
     platform,
     installApp,
     openInstallGuide,
     swRegistration,
+    needRefresh,
+    updateApp,
+    checkForUpdate,
+    isCheckingUpdate,
+    appVersion,
     showToast,
   } = usePwa();
 
@@ -110,12 +116,16 @@ export const PwaOfflinePage: React.FC = () => {
             <Smartphone className="w-4 h-4 text-teal-600" />
           </div>
           <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-2">
-            {isInstalled ? 'Installed as App' : 'Browser Session'}
+            {isStandalone
+              ? 'Standalone App'
+              : isInstalled
+              ? 'Installed on Device'
+              : 'Browser Session'}
           </p>
           <div className="mt-1.5 flex flex-col gap-1.5">
             {isInstalled ? (
               <Badge variant="success" className="w-fit text-[10px]">
-                Standalone Mode Active
+                {isStandalone ? 'Standalone Window Active' : 'Installed (Browser View)'}
               </Badge>
             ) : (
               <>
@@ -140,16 +150,46 @@ export const PwaOfflinePage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Service Worker State */}
+        {/* Service Worker & Updates State */}
         <Card className="p-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Service Worker</span>
+            <span>Service Worker & Version</span>
             <HardDrive className="w-4 h-4 text-purple-500" />
           </div>
-          <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-2">
-            {swRegistration ? 'Active (Workbox)' : 'Registering...'}
-          </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Precached shell & Web Push enabled</p>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              v{appVersion}
+            </p>
+            {needRefresh && (
+              <Badge variant="warning" className="text-[10px] animate-pulse">
+                Update Ready
+              </Badge>
+            )}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            {needRefresh ? (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={updateApp}
+                className="text-[11px] py-1 h-7 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                <span>Reload App</span>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => checkForUpdate(true)}
+                disabled={isCheckingUpdate}
+                className="text-[11px] py-1 h-7"
+              >
+                <RefreshCw className={`w-3 h-3 mr-1 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                <span>{isCheckingUpdate ? 'Checking...' : 'Check Updates'}</span>
+              </Button>
+            )}
+          </div>
         </Card>
       </div>
 
@@ -313,7 +353,7 @@ export const PwaOfflinePage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
             <span className="text-[11px] text-slate-500">
               {isInstalled
-                ? 'App is currently running in standalone display mode.'
+                ? 'Unity LOS is installed on this device. Mobile operating systems prohibit duplicate installations.'
                 : 'Need help installing? View detailed step-by-step visual instructions.'}
             </span>
             <div className="flex items-center gap-2">

@@ -17,6 +17,7 @@ import {
   ChevronRight,
   X,
   Download,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/AuthContext';
 import { usePwa } from '../../features/pwa/PwaContext';
@@ -31,7 +32,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser } = useAuth();
-  const { isInstalled, installApp } = usePwa();
+  const { isInstalled, installApp, needRefresh, updateApp } = usePwa();
   const applications = storage.getApplications();
 
   // Dynamic status badges
@@ -168,8 +169,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           })}
         </div>
 
-        {/* Install Mobile App Banner */}
-        {!isInstalled && (
+        {/* PWA Update Ready Banner */}
+        {needRefresh && (
+          <div className="mx-3 mb-2 p-3 rounded-xl bg-gradient-to-r from-amber-950/70 to-slate-900 border border-amber-500/40 text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-amber-300 text-xs">
+              <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+              <span>Update Ready</span>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-1 leading-snug">
+              A newer version of Unity LOS has been downloaded.
+            </p>
+            <button
+              type="button"
+              onClick={() => updateApp()}
+              className="mt-2.5 w-full py-1.5 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-sm transition-all"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Reload App</span>
+            </button>
+          </div>
+        )}
+
+        {/* Install Mobile App Banner (Strictly restricted when already installed on this device) */}
+        {!isInstalled && !needRefresh && (
           <div className="mx-3 mb-2 p-3 rounded-xl bg-gradient-to-r from-teal-950/70 to-slate-900 border border-teal-500/30 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-teal-300 text-xs">
               <Smartphone className="w-3.5 h-3.5 text-teal-400" />

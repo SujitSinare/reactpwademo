@@ -14,6 +14,8 @@ import {
   ExternalLink,
   ShieldCheck,
   LogOut,
+  RefreshCw,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/AuthContext';
 import { usePwa } from '../../features/pwa/PwaContext';
@@ -30,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, switchUser, switchRole, allUsers, logout } = useAuth();
-  const { isOnline, isInstallable, installApp, isInstalled } = usePwa();
+  const { isOnline, isInstallable, installApp, isInstalled, isStandalone, needRefresh, updateApp } = usePwa();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -221,7 +223,21 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             <span>{isOnline ? 'Online' : 'Offline Mode'}</span>
           </div>
 
-          {/* PWA Install Button (Visible on mobile and desktop whenever not already installed) */}
+          {/* PWA Update Ready Action: User-guided reload trigger */}
+          {needRefresh && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={updateApp}
+              title="A new version of Unity LOS is available. Click to reload now."
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 shadow-md active:scale-95 transition-transform animate-pulse"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-slate-950 shrink-0" />
+              <span>Update Ready</span>
+            </Button>
+          )}
+
+          {/* PWA Install Button: Strictly restricted and hidden when already installed on this device */}
           {!isInstalled && (
             <Button
               variant="outline"
@@ -234,6 +250,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               <span className="font-semibold">Install</span>
               <span className="hidden md:inline font-semibold">App</span>
             </Button>
+          )}
+
+          {/* If already installed on device and in browser mode, show subtle indication */}
+          {isInstalled && !isStandalone && !needRefresh && (
+            <div
+              className="hidden lg:flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-lg"
+              title="Unity LOS is installed on this device. Open from your home screen for full standalone experience."
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>App Installed</span>
+            </div>
           )}
 
           {/* Theme Toggle */}

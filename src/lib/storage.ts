@@ -19,7 +19,9 @@ class StorageManager {
   private listeners: Set<() => void> = new Set();
 
   constructor() {
-    this.initIfEmpty();
+    if (typeof localStorage !== 'undefined') {
+      this.initIfEmpty();
+    }
   }
 
   public subscribe(callback: () => void): () => void {

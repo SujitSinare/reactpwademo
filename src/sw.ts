@@ -4,7 +4,12 @@ import { clientsClaim } from 'workbox-core';
 
 declare const self: ServiceWorkerGlobalScope;
 
-self.skipWaiting();
+// Handle skip waiting when instructed by the client/user reload prompt
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 clientsClaim();
 
 // Precache static assets compiled by Vite
