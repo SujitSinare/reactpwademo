@@ -1,40 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0B192C"/>
-      <stop offset="100%" stop-color="#1E3E62"/>
-    </linearGradient>
-    <linearGradient id="tealGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0D9488"/>
-      <stop offset="50%" stop-color="#14B8A6"/>
-      <stop offset="100%" stop-color="#06B6D4"/>
-    </linearGradient>
-    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F59E0B"/>
-      <stop offset="100%" stop-color="#FBBF24"/>
-    </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.35"/>
-    </filter>
-  </defs>
+  <!-- Unity Brand Golden Yellow Background Tile -->
+  <rect width="512" height="512" rx="108" fill="#FCB913"/>
 
-  <!-- Background Base -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
-  
-  <!-- Subtle inner border -->
-  <rect x="8" y="8" width="496" height="496" rx="104" stroke="url(#tealGrad)" stroke-width="3" stroke-opacity="0.35" fill="none"/>
+  <!-- Unity Small Finance Bank Interlocking Woven U Monogram -->
+  <g fill="#121212">
+    <!-- Top Horizontal Crossbar -->
+    <rect x="76" y="160" width="360" height="56" rx="8" />
 
-  <!-- Core Banking Monogram Emblem -->
-  <g filter="url(#shadow)" transform="translate(64, 64)">
-    <!-- Base Arch / Shield -->
-    <!-- Left Pillar (Navy to Teal) -->
-    <path d="M 64 80 L 128 80 L 128 240 C 128 275.3 156.7 304 192 304 C 227.3 304 256 275.3 256 240 L 256 80 L 320 80 L 320 240 C 320 310.7 262.7 368 192 368 C 121.3 368 64 310.7 64 240 Z" fill="url(#tealGrad)"/>
-    
-    <!-- Central Rising Growth Arrow / Spark -->
-    <path d="M 192 120 L 224 168 L 192 156 L 160 168 Z" fill="url(#goldGrad)"/>
-    
-    <!-- Top Horizontal Pediment Line -->
-    <rect x="48" y="44" width="288" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.95"/>
-    <rect x="80" y="24" width="224" height="12" rx="6" fill="url(#goldGrad)"/>
+    <!-- Bottom Horizontal Crossbar -->
+    <rect x="76" y="276" width="360" height="56" rx="8" />
+
+    <!-- Left Vertical Pillar -->
+    <rect x="148" y="80" width="56" height="248" rx="8" />
+
+    <!-- Right Vertical Pillar -->
+    <rect x="308" y="80" width="56" height="248" rx="8" />
+
+    <!-- Bottom Connecting U-Loop Arch -->
+    <path d="M 148 296 L 148 376 C 148 420, 184 448, 256 448 C 328 448, 364 420, 364 376 L 364 296 L 308 296 L 308 372 C 308 392, 288 400, 256 400 C 224 400, 204 392, 204 372 L 204 296 Z" />
+
+    <!-- Cutout Weave Depth Accents (Simulating authentic over-under weave) -->
+    <rect x="136" y="202" width="24" height="20" fill="#FCB913" rx="4" />
+    <rect x="352" y="202" width="24" height="20" fill="#FCB913" rx="4" />
   </g>
 </svg>
